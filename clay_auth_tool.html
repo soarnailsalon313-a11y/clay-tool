@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>hoshizuna clay カウンセリングシート</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAF9F6;--bg2:#F2F1ED;--bg3:#FFFFFF;
+  --text:#2C2C2A;--text2:#6B6B66;--text3:#9A9A95;
+  --bd:rgba(44,44,42,0.11);--bd2:rgba(44,44,42,0.2);
+  --r:10px;--rs:6px;--purple:#A080C8;
+}
+html{background:var(--bg)}
+body{
+  font-family:-apple-system,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+  font-size:14px;line-height:1.6;color:var(--text);background:var(--bg);
+  max-width:560px;margin:0 auto;padding-bottom:60px;
+}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:32px 24px;
+}
+.auth-logo{font-size:11px;letter-spacing:.1em;color:var(--text3);margin-bottom:6px}
+.auth-title{font-size:22px;font-weight:500;color:var(--text);margin-bottom:6px;text-align:center}
+.auth-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:32px;line-height:1.7}
+.auth-card{
+  width:100%;max-width:380px;background:var(--bg3);
+  border-radius:14px;border:0.5px solid var(--bd2);padding:24px 20px;
+}
+.auth-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block}
+.auth-input{
+  width:100%;padding:12px 14px;border-radius:var(--r);
+  border:0.5px solid var(--bd2);background:var(--bg);
+  font-size:14px;color:var(--text);font-family:inherit;
+  outline:none;margin-bottom:14px;
+}
+.auth-input:focus{border-color:var(--purple)}
+.auth-btn{
+  width:100%;padding:13px;border-radius:var(--r);
+  background:#2C2C2A;color:#FAFAF6;border:none;
+  font-size:14px;font-family:inherit;cursor:pointer;
+  transition:opacity .15s;
+}
+.auth-btn:active{opacity:.8}
+.auth-btn:disabled{opacity:.4;cursor:not-allowed}
+.auth-err{
+  font-size:12px;color:#A32D2D;background:#FCEBEB;
+  border-radius:var(--rs);padding:9px 12px;margin-top:10px;
+  display:none;line-height:1.5;
+}
+.auth-err.show{display:block}
+.auth-notice{
+  margin-top:20px;font-size:11px;color:var(--text3);
+  text-align:center;line-height:1.7;
+}
+.loading-spinner{
+  display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+  margin:0 auto;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── WATERMARK ── */
+.watermark{
+  position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;
+  z-index:9999;opacity:0;
+}
+.watermark-text{
+  position:absolute;font-size:11px;color:rgba(160,128,200,0.12);
+  transform:rotate(-30deg);white-space:nowrap;font-weight:500;
+  letter-spacing:.05em;
+}
+
+/* ── WARNING BANNER ── */
+.warn-banner{
+  background:#2C2C2A;color:#9A9A95;font-size:10px;
+  text-align:center;padding:7px 16px;line-height:1.6;letter-spacing:.02em;
+}
+
+/* ── MAIN APP (hidden until auth) ── */
+#app{display:none}
+
+header{background:#2C2C2A;padding:18px 16px 16px;position:sticky;top:0;z-index:20}
+header .sub{font-size:10px;color:#7A7A75;letter-spacing:.07em;margin-bottom:3px}
+header h1{font-size:18px;font-weight:500;color:#FAFAF6}
+header .user-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+header .user-email{font-size:10px;color:#6A6A65}
+header .logout-btn{font-size:10px;color:#6A6A65;background:none;border:0.5px solid #4A4A45;border-radius:4px;padding:2px 8px;cursor:pointer;font-family:inherit}
+.progress-bar{height:2px;background:rgba(255,255,255,0.08);margin-top:10px;border-radius:1px;overflow:hidden}
+.progress-fill{height:100%;background:var(--purple);border-radius:1px;transition:width .3s ease;width:0}
+
+.tabs{display:flex;overflow-x:auto;gap:0;border-bottom:0.5px solid var(--bd);background:var(--bg3);position:sticky;top:82px;z-index:15;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:10px 14px;font-size:12px;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.tab.active{color:var(--text);border-bottom-color:var(--purple);font-weight:500}
+
+.panels{padding:14px 14px 0}
+.panel{display:none}
+.panel.active{display:block}
+
+.section{margin-bottom:20px}
+.section-head{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.section-icon{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.section-title{font-size:11px;font-weight:500;letter-spacing:.07em;color:var(--text3);text-transform:uppercase}
+
+.checks{display:flex;flex-direction:column;gap:5px}
+.check-item{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+  border-radius:var(--r);border:0.5px solid var(--bd);background:var(--bg3);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .12s,border-color .12s;user-select:none;
+}
+.check-item:active{opacity:.85}
+.check-item.active{background:#F0EBF8;border-color:var(--purple)}
+.cb{
+  width:20px;height:20px;border-radius:5px;border:1.5px solid var(--bd2);
+  background:var(--bg3);flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;transition:all .12s;
+}
+.check-item.active .cb{background:var(--purple);border-color:var(--purple)}
+.cm{width:11px;height:8px;opacity:0;transition:opacity .12s}
+.check-item.active .cm{opacity:1}
+.cm path{stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.cl{flex:1}
+.cl-main{font-size:13px;color:var(--text);line-height:1.45}
+.cl-sub{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4}
+
+.result-wrap{margin:0 14px;border-radius:var(--r);border:0.5px solid var(--bd);background:var(--bg2);overflow:hidden}
+.result-head{padding:10px 14px;border-bottom:0.5px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.result-head-l{font-size:12px;font-weight:500;color:var(--text2)}
+.result-head-r{font-size:10px;color:var(--text3)}
+.result-empty{padding:22px 14px;text-align:center;font-size:13px;color:var(--text3);line-height:1.8}
+.clay-list{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+
+.clay-card{border-radius:var(--r);border:0.5px solid var(--bd);background:var(--bg3);overflow:hidden}
+.clay-top{display:flex}
+.clay-bar-el{width:5px;flex-shrink:0}
+.clay-content{flex:1;padding:10px 12px}
+.clay-row1{display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap}
+.clay-name{font-size:15px;font-weight:500;color:var(--text)}
+.clay-rank-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.clay-reason{font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:4px}
+.area-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+.area-tag{font-size:11px;padding:3px 9px;border-radius:20px;border:0.5px solid var(--bd);background:var(--bg2);color:var(--text2);display:flex;align-items:center;gap:4px}
+.area-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.match-row{display:flex;align-items:center;gap:7px;margin-top:2px}
+.match-bg{flex:1;height:3px;border-radius:2px;background:var(--bd);overflow:hidden}
+.match-fill{height:100%;border-radius:2px;transition:width .35s ease}
+.match-pct{font-size:10px;color:var(--text3);min-width:36px;text-align:right}
+.symptom-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.symptom-tag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg2);color:var(--text3)}
+
+.actions{padding:14px 14px 0;display:flex;gap:8px}
+.btn{flex:1;padding:11px;border-radius:var(--r);border:0.5px solid var(--bd2);background:transparent;font-size:13px;color:var(--text2);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.btn:active{background:var(--bg2)}
+.btn-accent{background:#2C2C2A;color:#FAFAF6;border-color:#2C2C2A}
+.btn-accent:active{background:#444441}
+
+footer{margin-top:28px;padding:0 14px;text-align:center;font-size:10px;color:var(--text3);line-height:1.9}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ── -->
+<div id="auth-screen">
+  <div class="auth-logo">hoshizuna clay</div>
+  <div class="auth-title">導入サロン専用ツール</div>
+  <div class="auth-sub">登録メールアドレスを入力してください。<br>導入サロン以外のアクセスはできません。</div>
+  <div class="auth-card">
+    <label class="auth-label">メールアドレス</label>
+    <input class="auth-input" type="email" id="email-input" placeholder="salon@example.com" autocomplete="email">
+    <button class="auth-btn" id="auth-btn" onclick="doAuth()">
+      <span id="btn-text">確認してログイン</span>
+      <div class="loading-spinner" id="spinner"></div>
+    </button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+  <div class="auth-notice">
+    このツールはhoshizuna clay導入サロン限定です。<br>
+    無断転用・第三者への共有は契約違反となります。
+  </div>
+</div>
+
+<!-- ── WATERMARK (shown after login) ── -->
+<div class="watermark" id="watermark"></div>
+
+<!-- ── MAIN APP ── -->
+<div id="app">
+  <div class="warn-banner">このツールは導入サロン限定です｜無断転用・共有禁止｜hoshizuna clay</div>
+
+  <header>
+    <div class="sub">hoshizuna clay — カウンセリングシート</div>
+    <h1>お客様の症状チェック</h1>
+    <div class="user-row">
+      <span class="user-email" id="user-email-display"></span>
+      <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="head">頭部・顔</div>
+    <div class="tab" data-tab="beauty">美容・肌</div>
+    <div class="tab" data-tab="woman">婦人科系</div>
+    <div class="tab" data-tab="body">からだ全体</div>
+    <div class="tab" data-tab="gut">消化器系</div>
+    <div class="tab" data-tab="mental">自律神経・心</div>
+  </div>
+
+  <div class="panels">
+
+    <div class="panel active" id="panel-head">
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#D47A6A"></div><div class="section-title">頭痛のタイプ</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="zutsuu_ketsuryuu" data-label="血流性の頭痛"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">締めつけられるような頭痛</div><div class="cl-sub">首・肩こりと一緒に出る／朝方に多い</div></div></label>
+          <label class="check-item" data-key="zutsuu_hensoku" data-label="偏頭痛傾向"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">ズキズキする片頭痛</div><div class="cl-sub">光・音が気になる／月経前後に悪化することがある</div></div></label>
+          <label class="check-item" data-key="zutsuu_omoi" data-label="頭の重だるさ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">頭が重い・ぼーっとする</div><div class="cl-sub">水分代謝が悪い感じ／むくみと一緒に出る</div></div></label>
+          <label class="check-item" data-key="zutsuu_stress" data-label="緊張性頭痛"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">ストレス・緊張後の頭痛</div><div class="cl-sub">後頭部・首まわりが特に張る</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#6AAED4"></div><div class="section-title">目・鼻・顎</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="me_tsukareme" data-label="疲れ目・眼精疲労"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">目の疲れ・かすみ目</div><div class="cl-sub">スマホ・PC使用後に特に悪化</div></div></label>
+          <label class="check-item" data-key="me_kubomi" data-label="目の下のクマ・くぼみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">目の下のクマ・くぼみ</div><div class="cl-sub">青クマ（血行）または黒クマ（くぼみ）</div></div></label>
+          <label class="check-item" data-key="hana_tsumari" data-label="鼻づまり・アレルギー"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">鼻づまり・アレルギー性鼻炎</div><div class="cl-sub">花粉症・季節の変わり目に悪化</div></div></label>
+          <label class="check-item" data-key="ago_kate" data-label="顎のかみしめ・歯ぎしり"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">顎のかみしめ・歯ぎしり</div><div class="cl-sub">顎関節が痛い／食いしばりが強い</div></div></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-beauty">
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#CACAC6"></div><div class="section-title">肌質・肌トラブル</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="skin_kusumi" data-label="くすみ・透明感不足"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">くすみ・肌のトーンが暗い</div><div class="cl-sub">疲れて見える／化粧のりが悪い</div></div></label>
+          <label class="check-item" data-key="skin_keana" data-label="毛穴・黒ずみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">毛穴が目立つ・毛穴の黒ずみ</div><div class="cl-sub">鼻まわり・頬の毛穴が気になる</div></div></label>
+          <label class="check-item" data-key="skin_hari" data-label="ハリ・弾力不足"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">ハリ・弾力がなくなってきた</div><div class="cl-sub">頬のたるみ・ほうれい線が気になる</div></div></label>
+          <label class="check-item" data-key="skin_kansou" data-label="乾燥・粉吹き"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">乾燥しやすい・粉が吹く</div><div class="cl-sub">インナードライ（内側の乾燥）も含む</div></div></label>
+          <label class="check-item" data-key="skin_binkan" data-label="敏感肌・赤み"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">敏感肌・すぐ赤くなる</div><div class="cl-sub">刺激に弱い／化粧品が合わないことが多い</div></div></label>
+          <label class="check-item" data-key="skin_abura" data-label="皮脂過剰・テカリ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">皮脂過剰・Tゾーンのテカリ</div><div class="cl-sub">ニキビができやすい／毛穴が詰まる</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#6AAED4"></div><div class="section-title">顔のむくみ・輪郭</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="face_mukumi" data-label="朝の顔のむくみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">朝起きると顔がむくんでいる</div><div class="cl-sub">特に目周り・頬が膨張感ある</div></div></label>
+          <label class="check-item" data-key="face_taru" data-label="フェイスラインのたるみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">フェイスラインがぼやける</div><div class="cl-sub">二重あご・顔が大きく見える</div></div></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-woman">
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#D4537E"></div><div class="section-title">生理痛のタイプ</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="seiri_kankaku" data-label="生理痛（冷え・血行不良タイプ）"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">下腹部がキューッと締まる・冷えると悪化</div><div class="cl-sub">血が出にくい・色が暗い・塊が出る</div></div></label>
+          <label class="check-item" data-key="seiri_zutsuu" data-label="生理時の頭痛・吐き気"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">生理中に頭痛・吐き気・だるさ</div><div class="cl-sub">プロスタグランジン過多による全身反応</div></div></label>
+          <label class="check-item" data-key="seiri_mukumi" data-label="生理前後のむくみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">生理前にむくむ・体が重くなる</div><div class="cl-sub">PMS（月経前症候群）のむくみ・胸の張り</div></div></label>
+          <label class="check-item" data-key="seiri_iraira" data-label="PMS・感情の波"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">生理前にイライラ・気分の波が激しい</div><div class="cl-sub">PMS・感情コントロールが難しくなる</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#D4B858"></div><div class="section-title">ホルモン・更年期</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="hormone_hotflash" data-label="ほてり・のぼせ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">ほてり・のぼせ・汗が急に出る</div><div class="cl-sub">更年期・自律神経の乱れによるホットフラッシュ</div></div></label>
+          <label class="check-item" data-key="hormone_hie" data-label="上半身熱・下半身冷え"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">上半身は熱いのに足は冷たい</div><div class="cl-sub">冷えのぼせ／血流の上下バランスが崩れている</div></div></label>
+          <label class="check-item" data-key="hormone_kanso" data-label="皮膚・粘膜の乾燥"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">皮膚・粘膜の乾燥（閉経前後）</div><div class="cl-sub">肌・目・口・膣の乾燥感がある</div></div></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-body">
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#D47A6A"></div><div class="section-title">冷えのタイプ</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="hie_matsu" data-label="末端冷え性"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">手足の先がいつも冷たい</div><div class="cl-sub">体幹は普通でも手足の末端だけ冷える</div></div></label>
+          <label class="check-item" data-key="hie_zenshin" data-label="全身冷え"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">体全体が冷えやすい・基礎体温が低い</div><div class="cl-sub">36度以下が続く／夏でも冷える</div></div></label>
+          <label class="check-item" data-key="hie_koshi" data-label="腰・骨盤まわりの冷え"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">腰・骨盤まわりがいつも冷たい</div><div class="cl-sub">座るとひんやりする／婦人科系不調と連動</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#7AB88A"></div><div class="section-title">むくみ・水分代謝</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="muku_ashi" data-label="脚のむくみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">夕方に脚がむくんでパンパン</div><div class="cl-sub">靴がきつくなる・ふくらはぎが重い</div></div></label>
+          <label class="check-item" data-key="muku_zenshin" data-label="全身のむくみ"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">全身的にむくみやすい・水分が抜けない</div><div class="cl-sub">体が重い・体重の増減が激しい</div></div></label>
+          <label class="check-item" data-key="muku_cellu" data-label="セルライト・皮下脂肪"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">セルライト・太もも・お尻が気になる</div><div class="cl-sub">押すと痛みがある・デコボコしている</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#888880"></div><div class="section-title">筋骨格・関節</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="kata_kori" data-label="肩こり・首こり"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">肩こり・首のこわばり</div><div class="cl-sub">慢性的に硬い・マッサージしてもすぐ戻る</div></div></label>
+          <label class="check-item" data-key="koshi_itami" data-label="腰痛・背中の痛み"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">腰痛・背中のだるさ・張り</div><div class="cl-sub">長時間座ると悪化／姿勢が気になる</div></div></label>
+          <label class="check-item" data-key="kansetsu" data-label="関節の痛み・こわばり"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">膝・手首・足首の痛みやこわばり</div><div class="cl-sub">朝に硬い・天候が悪いと悪化する</div></div></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-gut">
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#7AB88A"></div><div class="section-title">腸・お腹の状態</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="cho_benpi" data-label="便秘・お腹の張り"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">便秘気味・お腹が張る</div><div class="cl-sub">3日以上出ない・ガスが溜まりやすい</div></div></label>
+          <label class="check-item" data-key="cho_geri" data-label="軟便・下痢傾向"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">軟便・下痢になりやすい</div><div class="cl-sub">ストレスや食事変化で悪化する</div></div></label>
+          <label class="check-item" data-key="cho_omoi" data-label="お腹の重さ・ぽっこり"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">お腹がぽっこり・いつも重い感じ</div><div class="cl-sub">食後のお腹の膨らみが気になる</div></div></label>
+          <label class="check-item" data-key="cho_detox" data-label="デトックス・腸活"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">体の中から老廃物を出したい</div><div class="cl-sub">腸活・デトックスに取り組みたい</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#D4B858"></div><div class="section-title">胃・肝臓の状態</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="i_omoi" data-label="胃もたれ・消化不良"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">胃もたれ・消化が遅い感じ</div><div class="cl-sub">食後に胃が重い・げっぷが多い</div></div></label>
+          <label class="check-item" data-key="kimo_tsukare" data-label="肝臓の疲れ・右脇腹"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">右脇腹の重さ・疲れやすい</div><div class="cl-sub">アルコール・脂肪分の多い食事が続いている</div></div></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-mental">
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#A080C8"></div><div class="section-title">ストレス・緊張</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="men_kinchyou" data-label="慢性的な緊張"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">リラックスできない・常に緊張している</div><div class="cl-sub">肩に力が入る・顔がこわばる</div></div></label>
+          <label class="check-item" data-key="men_stress" data-label="ストレス過多"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">仕事・人間関係のストレスが多い</div><div class="cl-sub">頑張りすぎる・休むのが苦手</div></div></label>
+          <label class="check-item" data-key="men_iraira" data-label="イライラ・怒りやすい"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">イライラしやすい・小さなことで怒る</div><div class="cl-sub">肝の気の高ぶり・熱感がある</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#6AAED4"></div><div class="section-title">睡眠・回復</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="suim_nemu" data-label="寝つきが悪い"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">寝つきが悪い・布団に入っても眠れない</div><div class="cl-sub">頭がオフにならない・考えすぎる</div></div></label>
+          <label class="check-item" data-key="suim_asai" data-label="眠りが浅い・中途覚醒"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">眠りが浅い・夜中に目が覚める</div><div class="cl-sub">朝起きても疲れが取れていない</div></div></label>
+          <label class="check-item" data-key="suim_tsukare" data-label="慢性疲労・回復しない"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">休んでも疲れが抜けない・慢性疲労</div><div class="cl-sub">副腎疲労・エネルギーが枯渇している感覚</div></div></label>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-icon" style="background:#D4B858"></div><div class="section-title">不安・気分の波</div></div>
+        <div class="checks">
+          <label class="check-item" data-key="men_fuan" data-label="不安感・心配が止まらない"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">不安感が強い・心配事が頭から離れない</div><div class="cl-sub">胃や胸に不安が来る感じ</div></div></label>
+          <label class="check-item" data-key="men_yutsu" data-label="気分の落ち込み・無気力"><div class="cb"><svg class="cm" viewBox="0 0 11 8"><path d="M1 4L4 7L10 1"/></svg></div><div class="cl"><div class="cl-main">やる気が出ない・気分が沈みがち</div><div class="cl-sub">特に朝が辛い・季節の変わり目に悪化</div></div></label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="result-wrap" id="result-wrap">
+    <div class="result-head">
+      <span class="result-head-l">おすすめクレイ</span>
+      <span class="result-head-r" id="check-count-r"></span>
+    </div>
+    <div id="result-body">
+      <div class="result-empty">症状にチェックを入れると<br>クレイと使用部位が表示されます</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="resetAll()">リセット</button>
+    <button class="btn btn-accent" onclick="scrollToResult()">提案を見る</button>
+  </div>
+
+  <footer>
+    hoshizuna clay — GMP認定 医薬・化粧品グレード<br>
+    導入サロン限定 カウンセリング補助ツール｜無断転用禁止
+  </footer>
+</div>
+
+<script>
+// ── CONFIG: ここにApps ScriptのURLを貼る ──────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwjyX8Z6hQ2viMKKaR3uZfEC4Rzj1ag-EklS1ff_1FNadBIdhp2Zeg2ex0HObSUb915MA/exec';
+// ──────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'hoshizuna_auth';
+
+// 起動時チェック
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = sessionStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    showApp(saved);
+  }
+  document.getElementById('email-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doAuth();
+  });
+});
+
+async function doAuth() {
+  const email = document.getElementById('email-input').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    showErr('正しいメールアドレスを入力してください');
+    return;
+  }
+
+  const btn = document.getElementById('auth-btn');
+  const txt = document.getElementById('btn-text');
+  const spin = document.getElementById('spinner');
+  btn.disabled = true;
+  txt.style.display = 'none';
+  spin.style.display = 'block';
+  hideErr();
+
+  try {
+    const res = await fetch(`${GAS_URL}?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+    if (data.allowed) {
+      sessionStorage.setItem(STORAGE_KEY, email);
+      showApp(email);
+    } else {
+      showErr('このメールアドレスは登録されていません。\nhoshizuna clay導入サロンのみご利用いただけます。');
+    }
+  } catch(e) {
+    showErr('接続エラーが発生しました。\nしばらくしてから再度お試しください。');
+  }
+
+  btn.disabled = false;
+  txt.style.display = 'block';
+  spin.style.display = 'none';
+}
+
+function showApp(email) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-email-display').textContent = email;
+  buildWatermark(email);
+}
+
+function doLogout() {
+  sessionStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('auth-err');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideErr() {
+  document.getElementById('auth-err').classList.remove('show');
+}
+
+function buildWatermark(email) {
+  const wm = document.getElementById('watermark');
+  wm.style.opacity = '1';
+  const short = email.split('@')[0];
+  for (let i = 0; i < 12; i++) {
+    const el = document.createElement('div');
+    el.className = 'watermark-text';
+    el.textContent = short + ' — hoshizuna clay';
+    el.style.top = (8 + i * 14) + '%';
+    el.style.left = (i % 2 === 0 ? -10 : 10) + '%';
+    wm.appendChild(el);
+  }
+}
+
+// ── CLAY DATA ─────────────────────────────────────────────
+const RULES = {
+  zutsuu_ketsuryuu:{Green:2,Red:3,Purple:2,areas:['頭部・側頭部パック','首・肩パック','足湯']},
+  zutsuu_hensoku:{Purple:3,Green:2,Blue:1,areas:['こめかみ・前頭部パック','足湯','首パック']},
+  zutsuu_omoi:{Blue:3,Green:2,areas:['頭部パック','足湯','デコルテ']},
+  zutsuu_stress:{Purple:3,Blue:2,areas:['後頭部・首パック','肩パック','足湯']},
+  me_tsukareme:{Blue:3,Purple:2,areas:['目周り（パック外周）','こめかみ','足湯']},
+  me_kubomi:{Blue:3,Yellow:2,areas:['目周りパック','デコルテ','フェイシャル全体']},
+  hana_tsumari:{Green:2,White:2,Blue:1,areas:['鼻周辺パック','デコルテパック','足湯']},
+  ago_kate:{Purple:3,Green:2,areas:['顎・側頭筋パック','肩首パック']},
+  skin_kusumi:{White:3,Yellow:2,areas:['フェイシャルパック','デコルテパック']},
+  skin_keana:{White:3,Blue:2,areas:['フェイシャルパック（鼻周り重点）']},
+  skin_hari:{Yellow:3,White:2,areas:['フェイシャルパック','首・デコルテパック']},
+  skin_kansou:{Yellow:3,White:2,areas:['フェイシャルパック','腕・デコルテ']},
+  skin_binkan:{White:3,areas:['フェイシャルパック（薄め濃度）']},
+  skin_abura:{Green:3,White:2,areas:['Tゾーン・フェイシャルパック']},
+  face_mukumi:{Blue:3,Green:2,areas:['フェイシャルパック','デコルテ','足湯']},
+  face_taru:{Blue:3,Yellow:2,areas:['フェイスライン・顎ライン','デコルテ']},
+  seiri_kankaku:{Red:3,Green:2,areas:['下腹部パック','腰パック','足湯']},
+  seiri_zutsuu:{Purple:3,Green:2,Blue:1,areas:['足湯','こめかみ・首パック','下腹部パック']},
+  seiri_mukumi:{Green:3,Blue:2,areas:['下腹部・脚パック','足湯','デコルテ']},
+  seiri_iraira:{Purple:3,Green:2,areas:['足湯','肩首パック','腹部パック']},
+  hormone_hotflash:{Blue:3,Purple:2,areas:['足湯','デコルテパック','手浴']},
+  hormone_hie:{Red:3,Purple:2,areas:['足湯（RED重点）','腰パック','デコルテ（BLUE）']},
+  hormone_kanso:{Yellow:3,White:2,areas:['全身ボディパック','フェイシャル','デコルテ']},
+  hie_matsu:{Red:3,areas:['足湯（メイン）','手浴','ふくらはぎパック']},
+  hie_zenshin:{Red:3,Green:2,areas:['足湯','腰・骨盤パック','ボディパック']},
+  hie_koshi:{Red:3,Green:2,areas:['腰・骨盤パック','足湯','下腹部パック']},
+  muku_ashi:{Green:3,Blue:2,areas:['ふくらはぎ・脚パック','足湯']},
+  muku_zenshin:{Green:3,Blue:2,areas:['ボディパック（全身）','足湯']},
+  muku_cellu:{Green:3,Red:2,areas:['太もも・お尻パック','ふくらはぎ','足湯']},
+  kata_kori:{Purple:3,Green:2,Blue:1,areas:['肩・首パック（メイン）','後頭部パック']},
+  koshi_itami:{Red:3,Green:2,areas:['腰パック（メイン）','骨盤まわり','足湯']},
+  kansetsu:{Green:3,Red:2,areas:['患部パック','足湯','全身温め']},
+  cho_benpi:{Green:3,areas:['腹部パック（メイン）','足湯']},
+  cho_geri:{Yellow:3,Purple:2,areas:['腹部パック','足湯（温め）']},
+  cho_omoi:{Green:3,Blue:2,areas:['腹部パック','足湯','デトックス足浴']},
+  cho_detox:{Green:3,Blue:2,Red:1,areas:['腹部パック','足湯（メイン）','ボディパック']},
+  i_omoi:{Yellow:3,Green:2,areas:['上腹部パック','足湯']},
+  kimo_tsukare:{Green:3,Yellow:2,areas:['右脇腹パック','足湯','背中パック']},
+  men_kinchyou:{Purple:3,Blue:2,areas:['肩首パック','足湯','フェイシャル']},
+  men_stress:{Purple:3,Blue:2,areas:['足湯','肩首パック','フェイシャル']},
+  men_iraira:{Green:3,Purple:2,areas:['足湯','腹部パック','フェイシャル']},
+  suim_nemu:{Purple:3,Blue:2,areas:['足湯（就寝前）','肩首パック']},
+  suim_asai:{Purple:3,Red:2,areas:['足湯','腰パック','手浴']},
+  suim_tsukare:{Purple:3,Yellow:2,Green:1,areas:['足湯','腹部パック','全身ボディパック']},
+  men_fuan:{Purple:3,Yellow:2,areas:['足湯','腹部（みぞおち）パック','手浴']},
+  men_yutsu:{Purple:3,Red:2,Yellow:1,areas:['足湯（温め）','腰パック','フェイシャル']},
+};
+
+const CLAY_INFO = {
+  Blue:  {bar:'#6AAED4',bg:'#E8F0F7',bd:'#4A7FA5',rt:'#1A4060',reason:'顔のむくみ・眼精疲労・冷感肌・デトックス。水分代謝を促し、施術後のスッキリ感が出やすい。'},
+  Green: {bar:'#7AB88A',bg:'#E8F4EC',bd:'#4A8B5C',rt:'#1A4828',reason:'全身のむくみ・腸・肝臓・デトックス。モンモリオナイト豊富で吸着力が高く、体内の変化を実感しやすい。'},
+  White: {bar:'#ACACAA',bg:'#F2F2EF',bd:'#888880',rt:'#2A2A28',reason:'くすみ・毛穴・敏感肌。純度98%以上のカオリナイトで刺激が最小限。透明感と肌均一化に最適。'},
+  Yellow:{bar:'#D4B858',bg:'#FBF4E0',bd:'#A07820',rt:'#4A3808',reason:'ハリ・乾燥・ホルモン系。イライト主体でミネラル補給力が高く、肌の弾力と内側からの潤いに対応。'},
+  Red:   {bar:'#D47A6A',bg:'#FAF0EE',bd:'#A84A38',rt:'#501008',reason:'冷え・血行促進・婦人科系。足湯で体感変化が出やすく、基礎体温の底上げと循環改善に特化。'},
+  Purple:{bar:'#A080C8',bg:'#F0EBF8',bd:'#6A4A90',rt:'#2E1850',reason:'自律神経・ストレス・睡眠。施術中に表情・肩の変化が出やすく、緊張開放と精神安定に対応。'},
+};
+
+const RANK_LABELS = ['最優先','次点','補助'];
+const checked = new Set();
+
+document.querySelectorAll('.check-item').forEach(el => {
+  el.addEventListener('click', () => {
+    const k = el.dataset.key;
+    checked.has(k) ? (checked.delete(k), el.classList.remove('active')) : (checked.add(k), el.classList.add('active'));
+    updateProgress();
+    render();
+  });
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+function updateProgress() {
+  const total = document.querySelectorAll('.check-item').length;
+  document.getElementById('prog').style.width = (checked.size / total * 100) + '%';
+  document.getElementById('check-count-r').textContent = checked.size > 0 ? checked.size + '項目選択中' : '';
+}
+
+function render() {
+  const scores = {}, areaMap = {};
+  checked.forEach(k => {
+    const rule = RULES[k]; if (!rule) return;
+    Object.entries(rule).forEach(([key, val]) => {
+      if (key === 'areas') return;
+      scores[key] = (scores[key] || 0) + val;
+    });
+    (rule.areas || []).forEach(a => {
+      if (!areaMap[a]) areaMap[a] = {clays: new Set(), count: 0};
+      areaMap[a].count++;
+      Object.entries(rule).forEach(([k2, v2]) => { if (k2 !== 'areas' && v2 >= 2) areaMap[a].clays.add(k2); });
+    });
+  });
+
+  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]).slice(0,3);
+  const body = document.getElementById('result-body');
+
+  if (sorted.length === 0) {
+    body.innerHTML = '<div class="result-empty">症状にチェックを入れると<br>クレイと使用部位が表示されます</div>';
+    return;
+  }
+
+  const maxScore = sorted[0][1];
+  const topClays = new Set(sorted.map(s => s[0]));
+
+  const symptomsByClay = {};
+  checked.forEach(k => {
+    const el = document.querySelector(`[data-key="${k}"]`);
+    const label = el ? el.dataset.label : k;
+    const rule = RULES[k]; if (!rule) return;
+    Object.entries(rule).forEach(([clay, pts]) => {
+      if (clay === 'areas' || pts < 2) return;
+      if (!symptomsByClay[clay]) symptomsByClay[clay] = [];
+      symptomsByClay[clay].push(label);
+    });
+  });
+
+  const cards = sorted.map(([name, score], i) => {
+    const c = CLAY_INFO[name];
+    const pct = Math.round(score / maxScore * 100);
+    const rankStyle = i === 0
+      ? `background:${c.bg};color:${c.rt};border:0.5px solid ${c.bd}`
+      : `background:#F2F1ED;color:#9A9A95;border:0.5px solid rgba(44,44,42,0.11)`;
+    const syms = (symptomsByClay[name] || []).slice(0,4);
+    const symHTML = syms.length > 0
+      ? `<div class="symptom-tags">${syms.map(s=>`<span class="symptom-tag">${s}</span>`).join('')}</div>` : '';
+    return `<div class="clay-card"><div class="clay-top">
+      <div class="clay-bar-el" style="background:${c.bar}"></div>
+      <div class="clay-content">
+        <div class="clay-row1"><span class="clay-name">${name} Clay</span><span class="clay-rank-badge" style="${rankStyle}">${RANK_LABELS[i]}</span></div>
+        <div class="clay-reason">${c.reason}</div>${symHTML}
+        <div class="match-row"><div class="match-bg"><div class="match-fill" style="width:${pct}%;background:${c.bar}"></div></div><span class="match-pct">一致度 ${pct}%</span></div>
+      </div></div></div>`;
+  }).join('');
+
+  const relevantAreas = Object.entries(areaMap)
+    .filter(([,v]) => [...v.clays].some(c => topClays.has(c)))
+    .sort((a,b) => b[1].count - a[1].count).slice(0,6);
+
+  const areaHTML = relevantAreas.length > 0
+    ? `<div style="padding:8px 12px 12px">
+        <div style="font-size:10px;font-weight:500;letter-spacing:.07em;color:var(--text3);text-transform:uppercase;margin-bottom:7px">おすすめ施術部位</div>
+        <div class="area-row">${relevantAreas.map(([area,v]) => {
+          const pc = [...v.clays].find(c => topClays.has(c)) || '';
+          const dc = pc ? CLAY_INFO[pc]?.bar : '#888';
+          return `<span class="area-tag"><span class="area-dot" style="background:${dc}"></span>${area}</span>`;
+        }).join('')}</div></div>` : '';
+
+  body.innerHTML = `<div class="clay-list">${cards}</div>${areaHTML}`;
+}
+
+function resetAll() {
+  checked.clear();
+  document.querySelectorAll('.check-item').forEach(el => el.classList.remove('active'));
+  updateProgress(); render();
+}
+function scrollToResult() {
+  document.getElementById('result-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
