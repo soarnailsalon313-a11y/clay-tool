@@ -164,6 +164,8 @@ header{background:#fff;padding:16px 18px 0;border-bottom:0.5px solid var(--bd);p
 .history-clay-badges{display:flex;flex-wrap:wrap;gap:4px}
 .history-clay-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
 .history-therapist-tag{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--purple-bg);color:var(--purple);border:0.5px solid var(--purple);display:inline-block;margin-bottom:2px}
+.history-delete-btn{background:none;border:0.5px solid #F0C0B0;border-radius:6px;color:#C06050;font-size:13px;padding:3px 7px;cursor:pointer;flex-shrink:0;}
+.history-delete-btn:active{background:#FFF0EE}
 .history-count{font-size:11px;color:var(--text3);margin-bottom:10px}
 footer{margin-top:30px;padding:0 14px;text-align:center;font-size:10px;color:var(--text3);line-height:2;letter-spacing:.04em}
 
@@ -530,6 +532,7 @@ function renderHistory(records){
     'Yellow Clay':'#FBF4E0','Red Clay':'#FAF0EE','Blue Clay':'#E8F0F7'
   };
 
+  const currentEmail=(sessionStorage.getItem(STORAGE_KEY)||'').toLowerCase();
   const html=records.map(r=>{
     const clays=(r.selectedClay||'').split('、').filter(Boolean);
     const clayBadges=clays.map(c=>{
@@ -543,13 +546,18 @@ function renderHistory(records){
       r.therapistNote?`<div class="history-row"><span class="history-row-label">体感・気づき</span><span class="history-row-val">${r.therapistNote}</span></div>`:'',
       r.nextNote?`<div class="history-row"><span class="history-row-label">次回メモ</span><span class="history-row-val">${r.nextNote}</span></div>`:'',
     ].filter(Boolean).join('');
-    return`<div class="history-card">
+    const canDelete=isAdmin||(r.therapistEmail||'').toLowerCase()===currentEmail;
+    const deleteBtn=canDelete?`<button class="history-delete-btn" onclick="deleteRecord(${r.rowIndex},this)" title="削除">🗑</button>`:'';
+    return`<div class="history-card" id="hcard-${r.rowIndex}">
       <div class="history-card-head">
-        <div>
+        <div style="flex:1">
           <div class="history-card-name">${r.clientName||'（名前なし）'}</div>
           ${therapistTag}
         </div>
-        <div class="history-card-date">${r.timestamp||''}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="history-card-date">${r.timestamp||''}</div>
+          ${deleteBtn}
+        </div>
       </div>
       <div class="history-card-body">
         <div class="history-row"><span class="history-row-label">クレイ</span><span class="history-row-val"><div class="history-clay-badges">${clayBadges}</div></span></div>
@@ -559,6 +567,28 @@ function renderHistory(records){
   }).join('');
 
   document.getElementById('history-content').innerHTML=`<div class="history-list">${html}</div>`;
+}
+
+async function deleteRecord(rowIndex, btn){
+  if(!confirm('この記録を削除しますか？')) return;
+  btn.textContent='…';btn.disabled=true;
+  try{
+    const email=sessionStorage.getItem(STORAGE_KEY)||'';
+    const res=await fetch(`${GAS_URL}?action=deleteRecord&rowIndex=${rowIndex}&email=${encodeURIComponent(email)}`);
+    const data=await res.json();
+    if(data.success){
+      const card=document.getElementById('hcard-'+rowIndex);
+      if(card) card.remove();
+      allHistoryData=allHistoryData.filter(r=>r.rowIndex!==rowIndex);
+      document.getElementById('history-count').textContent=allHistoryData.length+'件';
+    } else {
+      alert('削除できませんでした');
+      btn.textContent='🗑';btn.disabled=false;
+    }
+  }catch(e){
+    alert('通信エラーが発生しました');
+    btn.textContent='🗑';btn.disabled=false;
+  }
 }
 
 // ===== 既存ロジック =====
