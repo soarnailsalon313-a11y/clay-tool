@@ -173,7 +173,7 @@ footer{margin-top:30px;padding:0 14px;text-align:center;font-size:10px;color:var
   .warn-banner,.tabs,.actions,.therapist-section,.logout-btn,.progress-bar,.result-wrap,.panels,header{display:none!important}
   body{max-width:100%;padding:0}
   .pdf-section{display:block!important;margin:0;border:none;border-radius:0}
-  #pdf-dl-btn{display:none!important}
+  #pdf-btn-area{display:none!important}
 }
 </style>
 </head>
@@ -859,20 +859,20 @@ function printPDFOnly(){
   document.getElementById('pdf-section').style.display='block';
   document.getElementById('pdf-section').scrollIntoView({behavior:'smooth'});
 
-  // ★修正：PDF保存ボタン（iPhone対応）
-  const existing=document.getElementById('pdf-dl-btn');
-  if(existing) existing.remove();
-  const dlBtn=document.createElement('button');
-  dlBtn.id='pdf-dl-btn';
-  dlBtn.textContent='📥 PDFとして保存する';
-  dlBtn.style.cssText='display:block;width:calc(100% - 28px);margin:12px 14px 4px;padding:11px 15px;background:#9070B8;color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--sans);letter-spacing:.03em';
-  dlBtn.onclick=function(){ window.print(); };
-  document.getElementById('pdf-section').appendChild(dlBtn);
+  // ボタンエリア（印刷時は非表示）
+  const existingArea=document.getElementById('pdf-btn-area');
+  if(existingArea) existingArea.remove();
+  const btnArea=document.createElement('div');
+  btnArea.id='pdf-btn-area';
+  btnArea.style.cssText='padding:12px 14px 16px';
 
-  const hint=document.createElement('div');
-  hint.style.cssText='font-size:11px;color:#9A9A94;text-align:center;padding:0 14px 14px;line-height:1.8';
-  hint.innerHTML='📱 iPhoneの場合：印刷画面で <strong>2本指でピンチアウト</strong> するとPDFで保存できます';
-  document.getElementById('pdf-section').appendChild(hint);
+  const printBtn=document.createElement('button');
+  printBtn.textContent='📄 PDFとして保存する';
+  printBtn.style.cssText='width:100%;padding:11px 15px;background:#9070B8;color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--sans);letter-spacing:.03em';
+  printBtn.onclick=function(){ window.print(); };
+  btnArea.appendChild(printBtn);
+
+  document.getElementById('pdf-section').appendChild(btnArea);
 
   setTimeout(()=>window.print(),400);
 }
